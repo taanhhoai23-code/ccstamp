@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC·STAMP</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=20260616a">
+<link rel="apple-touch-icon" href="/static/favicon.svg?v=20260616a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --ink:#171717; --gray:#666666; --faint:#999999;
+    --line:#ebebeb; --fill:#171717;
+    --sans:'Geist',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    display:flex; flex-direction:column; min-height:100%;
+    position:relative; overflow-x:hidden;
+  }
+
+  .walls{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+  .col{position:absolute; top:0; width:150px; display:flex; flex-direction:column; gap:18px; opacity:.5}
+  .col.l{left:max(8px,calc(50% - 600px))}
+  .col.r{right:max(8px,calc(50% - 600px))}
+  .col img{width:150px; height:150px; border-radius:14px; display:block; image-rendering:pixelated;
+           box-shadow:0 1px 2px rgba(0,0,0,.04), 0 0 0 1px rgba(0,0,0,.05)}
+  @keyframes up{from{transform:translateY(0)} to{transform:translateY(-50%)}}
+  @keyframes down{from{transform:translateY(-50%)} to{transform:translateY(0)}}
+  .col.l{animation:up 60s linear infinite}
+  .col.r{animation:down 60s linear infinite}
+
+  .walls::before{content:''; position:absolute; inset:0; z-index:2;
+    background:linear-gradient(90deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.78) 22%, #fff 40%, #fff 60%, rgba(255,255,255,.78) 78%, rgba(255,255,255,.15) 100%)}
+
+  .walls::after{content:''; position:absolute; inset:0; z-index:2;
+    background:linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 16%, rgba(255,255,255,0) 84%, #fff 100%)}
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px; font-size:14px;
+    position:relative; z-index:3;
+  }
+  .brand{display:flex; align-items:center; gap:11px; color:var(--ink); text-decoration:none}
+  .brand-mark{width:30px;height:30px;border:1px solid #171717;border-radius:9px;display:grid;place-items:center;background:#171717;color:#fff;font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:-.04em;line-height:1}
+  .brand-text{display:flex; flex-direction:column; gap:1px}
+  .brand-name{font-weight:600; letter-spacing:-.03em; font-size:15px; line-height:1}
+  .brand-name .d{color:var(--faint); font-weight:400; margin:0 1px}
+  .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.09em;color:var(--faint);line-height:1;text-transform:uppercase}
+  .stat-net{font-family:var(--mono); font-size:12px; color:var(--faint); display:flex; align-items:center; gap:7px}
+  .dot{width:6px;height:6px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+
+
+  main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; position:relative; z-index:3}
+  .inner{width:100%; max-width:540px; background:rgba(255,255,255,.72); backdrop-filter:blur(2px); border-radius:20px; padding:8px}
+
+  .kicker{font-family:var(--mono); font-size:14px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); text-align:center; margin-bottom:18px}
+  h1{font-size:30px; font-weight:600; letter-spacing:-.03em; line-height:1.15; text-align:center; margin-bottom:8px}
+  h1 .tgt{font-family:var(--mono); font-weight:500}
+  .lead{font-size:15px; color:var(--gray); text-align:center; line-height:1.6; margin-bottom:54px}
+
+
+  .prog-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px}
+  .blk{font-family:var(--mono)}
+  .blk .n{font-size:30px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .blk .c{font-size:30px; font-weight:500; color:var(--ink)}
+  .blk .t{font-size:30px; font-weight:500; color:var(--faint)}
+  .blk .lab{display:block; font-family:var(--sans); font-size:12px; color:var(--faint); margin-top:5px; letter-spacing:.01em}
+  .prog-head .right{text-align:right}
+
+  .track{height:6px; background:var(--line); border-radius:6px; position:relative; overflow:hidden}
+  .track > i{position:absolute; left:0; top:0; height:100%; width:0%; background:var(--fill); border-radius:6px; transition:width .8s cubic-bezier(.4,0,.2,1)}
+  .sub{display:flex; justify-content:space-between; align-items:baseline; margin-top:14px; font-size:13px; color:var(--gray)}
+  .sub .left{font-family:var(--mono)}
+  .sub .left b{color:var(--ink); font-weight:500}
+  .sub .right{font-family:var(--mono); color:var(--faint); font-size:12px}
+
+
+  .rule{height:1px; background:var(--line); margin:52px 0 0}
+  .foot-stats{display:flex; justify-content:space-between; align-items:center; padding-top:24px}
+  .foot-stats .item .v{font-family:var(--mono); font-size:22px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .foot-stats .item .k{font-size:12px; color:var(--faint); margin-top:4px}
+  .foot-stats .item.r{text-align:right}
+
+
+  .phases{margin-top:54px; border-top:1px solid var(--line)}
+  .phase{display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:16px 12px; margin:0 -12px; border-bottom:1px solid var(--line);
+    border-radius:10px; transition:background .15s ease}
+  .phase:hover{background:#fafafa}
+  .phase.cur{background:#f7f7f7}
+  .ph-l{display:flex; align-items:center; gap:10px; min-width:0}
+  .ph-slot{width:6px; height:6px; flex:none; display:flex; align-items:center; justify-content:center}
+  .ph-no{font-family:var(--mono); font-size:13px; font-weight:500; color:var(--faint); white-space:nowrap}
+  .phase.cur .ph-no{color:var(--ink)}
+  .ph-tag{font-size:11px; line-height:1; color:var(--gray); background:#fff; border:1px solid var(--line); border-radius:999px; padding:4px 9px; white-space:nowrap}
+  .phase.cur .ph-tag{color:var(--ink); border-color:#dcdcdc}
+  .ph-note{font-size:13px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ph-dot{width:6px; height:6px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+  .ph-r{text-align:right; white-space:nowrap; display:flex; flex-direction:column; gap:3px}
+  .ph-qty{font-family:var(--mono); font-size:15px; font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.1}
+  .ph-qty .u{color:var(--faint); font-size:12px; font-weight:400; margin-left:2px}
+  .ph-price{font-family:var(--mono); font-size:12px; color:var(--faint); line-height:1.1}
+  .ph-price .free{color:#16a34a; font-weight:600; font-style:normal}
+
+
+  .cta{margin-top:28px; display:flex; flex-direction:column; align-items:center; gap:10px}
+  .cta a{display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:#fff;
+    text-decoration:none; font-size:14px; font-weight:500; padding:12px 24px; border-radius:9px;
+    transition:opacity .15s ease}
+  .cta a:hover{opacity:.88}
+  .cta .cta-sub{font-size:12px; color:var(--faint); text-align:center}
+
+
+  .live{display:none; text-align:center; margin-top:8px}
+  .live a{display:inline-block; background:var(--ink); color:#fff; text-decoration:none; font-size:15px; font-weight:500; padding:12px 26px; border-radius:8px}
+
+  footer{text-align:center; padding:26px; font-size:12px; color:#bcbcbc; font-family:var(--mono); letter-spacing:.02em; position:relative; z-index:3}
+
+  @media(max-width:1080px){ .walls{display:none} }
+  @media(max-width:560px){
+    header{padding:18px 20px}
+    h1{font-size:24px}
+    .blk .n,.blk .c,.blk .t{font-size:24px}
+    .ph-note{display:none}
+    .phase{padding:15px 10px; margin:0 -10px}
+  }
+</style>
+</head>
+<body>
+  <div class="walls" id="walls">
+    <div class="col l" id="colL"></div>
+    <div class="col r" id="colR"></div>
+  </div>
+  <header>
+    <a class="brand" href="/" aria-label="CC·STAMP">
+      <span class="brand-mark">CC</span>
+      <span class="brand-text"><span class="brand-name">CC<span class="d">·</span>STAMP</span><span class="brand-sub">ON BTCC</span></span>
+    </a>
+    <div class="stat-net"><span class="dot"></span>BTCC MAINNET</div>
+  </header>
+
+  <main>
+    <div class="inner">
+      <div class="kicker">即将开启</div>
+      <h1>铸造将于第 <span class="tgt" id="h-target">—</span> 区块开启</h1>
+      <p class="lead">{{ "{:,}".format(total) }} 枚，全部刻在 BTCC 链上，分三批放出。</p>
+
+      <div id="block-progress">
+        <div class="prog-head">
+          <div class="blk">
+            <span class="n c" id="tip">—</span>
+            <span class="lab">当前区块</span>
+          </div>
+          <div class="blk right">
+            <span class="n t" id="target">—</span>
+            <span class="lab">开启区块</span>
+          </div>
+        </div>
+        <div class="track"><i id="bar"></i></div>
+        <div class="sub">
+          <span class="left">还差 <b id="remain">—</b> 个区块</span>
+          <span class="right"><b id="pct" style="color:var(--ink);font-weight:500">—</b> · <span id="eta">预计计算中…</span></span>
+        </div>
+      </div>
+
+      <div class="live" id="live"><a href="/mint/">铸造已开启 — 进入铸造台 →</a></div>
+
+      <div class="rule" style="margin-top:46px"></div>
+      <div class="phases">
+        {% for p in phases %}
+        <div class="phase {{ 'cur' if p.cur else '' }}">
+          <div class="ph-l">
+            <span class="ph-slot">{% if p.cur %}<span class="ph-dot"></span>{% endif %}</span>
+            <span class="ph-no">第{{ p.no }}批</span>
+            <span class="ph-tag">{{ p.tag }}</span>
+            <span class="ph-note">{{ p.note }}</span>
+          </div>
+          <div class="ph-r">
+            <span class="ph-qty">{{ "{:,}".format(p.qty) }}<span class="u">枚</span></span>
+            <span class="ph-price">{% if p.price %}{{ p.price }} BTCC{% else %}<b class="free">免费</b>{% endif %}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="cta">
+        <a href="{{ community }}" target="_blank" rel="noopener">加入社区 · 参与白名单抽奖 →</a>
+        <span class="cta-sub">第一批 {{ "{:,}".format(phases[0].qty) }} 枚免费，由社区抽奖产生，名单开铸前公布</span>
+      </div>
+    </div>
+  </main>
+
+  <footer>BTCC · 链上原生铭刻 · 定时开放</footer>
+
+<script>
+const TARGET = {{ target }};
+document.getElementById('h-target').textContent = TARGET.toLocaleString();
+document.getElementById('target').textContent = TARGET.toLocaleString();
+
+function pad(n){return String(n).padStart(2,'0')}
+function fmtRate(s){ if(!s) return '—'; return s>=60 ? (s/60).toFixed(1)+' 分/块' : Math.round(s)+' 秒/块'; }
+function fmtEta(secs){
+  if(secs<=0) return '即将开启';
+  const d=Math.floor(secs/86400), h=Math.floor(secs%86400/3600), m=Math.floor(secs%3600/60);
+  if(d>0) return `预计还需 ${d} 天 ${h} 小时`;
+  if(h>0) return `预计还需 ${h} 小时 ${m} 分`;
+  return `预计还需 ${m} 分`;
+}
+
+async function pull(){
+  try{
+    const r = await fetch('/api/blockinfo',{cache:'no-store'});
+    if(!r.ok) return;
+    const d = await r.json();
+    document.getElementById('tip').textContent = d.tip.toLocaleString();
+    document.getElementById('remain').textContent = d.remaining.toLocaleString();
+    document.getElementById('bar').style.width = Math.max(0.6, d.progress).toFixed(2)+'%';
+    const bj = new Date((d.eta_ts + 8*3600)*1000);
+    const wd = ['日','一','二','三','四','五','六'][bj.getUTCDay()];
+    const when = `${bj.getUTCMonth()+1}月${bj.getUTCDate()}日 周${wd} ${pad(bj.getUTCHours())}:${pad(bj.getUTCMinutes())}`;
+    document.getElementById('eta').textContent = d.remaining<=0 ? '即将开启' : (fmtEta(d.eta_secs)+' · '+when+'(北京)');
+    if(d.live){
+      document.getElementById('block-progress').style.opacity=.4;
+      document.getElementById('live').style.display='block';
+      setTimeout(()=>location.href='/mint/', 2500);
+    }
+  }catch(e){}
+}
+async function loadWalls(){
+  if(window.innerWidth <= 1080) return;
+  try{
+    const r = await fetch('/api/showcase',{cache:'no-store'});
+    if(!r.ok) return;
+    const d = await r.json();
+    const items = d.items||[];
+    if(!items.length) return;
+    const half = Math.ceil(items.length/2);
+    const setL = items.slice(0, half);
+    const setR = items.slice(half);
+    const fill = (el, arr)=>{
+      const seq = arr.concat(arr);
+      el.innerHTML = seq.map(u=>`<img src="${u}" loading="lazy" alt="">`).join('');
+    };
+    fill(document.getElementById('colL'), setL.length?setL:items);
+    fill(document.getElementById('colR'), setR.length?setR:items);
+  }catch(e){}
+}
+loadWalls();
+pull(); setInterval(pull, 15000);
+</script>
+</body>
+</html>

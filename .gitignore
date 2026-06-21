@@ -1,0 +1,46 @@
+# 数据库
+*.db
+*.db.*
+*.db.bak*
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# 环境/密钥
+.env
+.env.*
+*.key
+*.pem
+wallet.dat
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 日志
+logs/
+*.log
+
+# 备份文件
+backups/
+*.bak
+*.bak.*
+*.bak-*
+*.WRONG_PURGE.*
+
+# 运行时产物
+*.tmp
+*.cache
+local-*.json
+ccstamp_mint_failure_audit_*.md
+
+# 运行时产物 / 大图
+last_inscription.json
+restored_*.png
+restored_*.svg
+mint_preview.png
+mint_v2.png
+sample_grid.png

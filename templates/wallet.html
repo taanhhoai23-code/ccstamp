@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTCC 钱包</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=20260616a">
+<link rel="apple-touch-icon" href="/static/favicon.svg?v=20260616a">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --ink:#171717; --gray:#666666; --faint:#999999;
+    --line:#ebebeb; --fill:#171717; --soft:#fafafa;
+    --green:#16a34a; --red:#dc2626;
+    --sans:'Geist',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    display:flex; flex-direction:column; min-height:100%}
+
+  #bgCanvas{display:none}
+  main,header{position:relative; z-index:1}
+  a{color:inherit}
+
+  header{display:flex; align-items:center; justify-content:space-between;
+    padding:20px 24px; border-bottom:1px solid var(--line)}
+  .wm{font-weight:600; letter-spacing:-.01em; font-size:15px}
+  .wm .d{color:var(--faint); font-weight:400; margin:0 1px}
+  .wm .sub{color:var(--faint); font-weight:400; font-size:13px; margin-left:8px}
+  .net{font-family:var(--mono); font-size:12px; color:var(--faint); display:flex; align-items:center; gap:7px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+  .dot.off{background:var(--faint);box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+
+  main{flex:1; display:flex; flex-direction:column; align-items:center; padding:32px 20px 60px}
+
+  body.centered main{justify-content:center; padding-bottom:96px}
+  .card{width:100%; max-width:440px}
+  .wide{max-width:680px}
+
+  body.centered .card{max-width:520px; text-align:center}
+  body.centered #v-welcome h1{font-size:34px; margin-bottom:14px}
+  body.centered #v-welcome .lead{font-size:15px; line-height:1.75; max-width:380px; margin-left:auto; margin-right:auto; margin-bottom:6px}
+  body.centered #v-welcome .lead.note{color:var(--ink); margin-top:14px; margin-bottom:36px}
+  body.centered #v-welcome .lead.note b{font-weight:600}
+  body.centered #v-welcome .btn{padding:16px 18px; font-size:15px}
+  body.centered #v-welcome .kicker{display:block}
+
+
+  body.boot-unlock #v-welcome{display:none}
+  body.boot-unlock #v-unlock{display:block}
+
+  h1{font-size:24px; font-weight:600; letter-spacing:-.02em; margin-bottom:6px}
+  h2{font-size:18px; font-weight:600; letter-spacing:-.02em; margin-bottom:4px}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); margin-bottom:14px}
+  .lead{font-size:14px; color:var(--gray); line-height:1.6; margin-bottom:28px}
+  .muted{color:var(--faint)}
+  .mono{font-family:var(--mono)}
+
+
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:13px 18px; border-radius:10px; border:1px solid var(--ink);
+    background:var(--ink); color:#fff; font-family:var(--sans); font-size:14px; font-weight:500;
+    cursor:pointer; transition:opacity .15s, background .15s; -webkit-tap-highlight-color:transparent}
+  .btn:hover{opacity:.85}
+  .btn:disabled{opacity:.4; cursor:not-allowed}
+  .btn.loading{opacity:.6; cursor:wait}
+  .btn.ghost{background:#fff; color:var(--ink)}
+  .btn.ghost:hover{background:var(--soft); opacity:1}
+  .btn.danger{background:#fff; color:var(--red); border-color:#f0c9c9}
+  .btn.danger:hover{background:#fef2f2; opacity:1}
+  .btn.sm{width:auto; padding:8px 14px; font-size:13px; border-radius:8px}
+  .btn-row{display:flex; gap:10px; margin-top:12px}
+  .btn-row .btn{width:auto; flex:1}
+
+
+  label{display:block; font-size:13px; color:var(--gray); margin:18px 0 7px}
+  input,textarea{width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px;
+    font-family:var(--sans); font-size:14px; color:var(--ink); background:#fff; outline:none; transition:border-color .15s}
+  input:focus,textarea:focus{border-color:var(--ink)}
+  input.mono,textarea.mono{font-family:var(--mono); font-size:13px}
+  textarea{resize:none; line-height:1.7}
+  .hint{font-size:12px; color:var(--faint); margin-top:7px; line-height:1.5}
+  .err{font-size:13px; color:var(--red); margin-top:10px; min-height:18px}
+
+
+  .mn-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:8px 0 4px}
+  .mn-cell{display:flex; align-items:center; gap:7px; padding:9px 10px; border:1px solid var(--line);
+    border-radius:8px; background:var(--soft); font-family:var(--mono); font-size:13px}
+  .mn-cell .i{color:var(--faint); font-size:11px; min-width:16px; text-align:right}
+  .mn-warn{display:flex; gap:10px; padding:12px 14px; border:1px solid #f5e6c8; background:#fffbf0;
+    border-radius:10px; font-size:13px; color:#92741a; line-height:1.55; margin:18px 0}
+
+
+  .verify-q{font-size:14px; margin:16px 0 10px}
+  .verify-q b{font-family:var(--mono)}
+  .word-opts{display:flex; flex-wrap:wrap; gap:8px}
+  .word-opt{padding:9px 14px; border:1px solid var(--line); border-radius:8px; background:#fff;
+    font-family:var(--mono); font-size:13px; cursor:pointer; transition:.15s}
+  .word-opt:hover{border-color:var(--ink)}
+  .word-opt.sel{background:var(--ink); color:#fff; border-color:var(--ink)}
+
+
+  .bal-card{border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px}
+  .bal-card .lab{font-size:12px; color:var(--faint); margin-bottom:6px}
+  .bal-card .amt{font-family:var(--sans); font-size:34px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1}
+  .bal-card .amt .u{font-size:16px; color:var(--gray); margin-left:6px}
+  .bal-card .lock{font-size:12px; color:var(--faint); margin-top:8px}
+  .addr-row{display:flex; align-items:center; gap:10px; margin-top:18px; padding-top:18px; border-top:1px solid var(--line)}
+  .addr-row .a{flex:1; font-family:var(--mono); font-size:11px; word-break:break-all; line-height:1.5; color:var(--gray)}
+  .copy{cursor:pointer; color:var(--faint); font-size:12px; white-space:nowrap; padding:4px 8px; border:1px solid var(--line); border-radius:7px; transition:.15s}
+  .copy:hover{border-color:var(--ink); color:var(--ink)}
+  .copy.ok{color:var(--green); border-color:var(--green)}
+
+
+  .wallet-bar{display:flex; gap:8px; margin-bottom:16px}
+  .wallet-bar select{flex:1; padding:9px 12px; border:1px solid var(--line); border-radius:9px;
+    font-family:var(--sans); font-size:13px; color:var(--ink); background:#fff;
+    cursor:pointer; outline:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center; padding-right:32px}
+  .wallet-bar select:focus{border-color:var(--ink)}
+  .mini{padding:9px 14px; border:1px solid var(--line); border-radius:9px; background:#fff;
+    font-family:var(--sans); font-size:13px; color:var(--ink); cursor:pointer; white-space:nowrap; transition:.15s}
+  .mini:hover{border-color:var(--ink)}
+  .mini.danger{color:var(--red); border-color:#f0c9c9}
+  .mini.danger:hover{background:#fef2f2; border-color:var(--red)}
+
+
+  .settings{margin-top:30px; border-top:1px solid var(--line); padding-top:8px}
+  .set-row{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 0; border-bottom:1px solid var(--line)}
+  .set-row:last-child{border-bottom:0}
+  .set-label{font-size:14px; color:var(--ink); display:flex; flex-direction:column; gap:3px}
+  .set-label .set-sub{font-size:12px; color:var(--faint); font-weight:400}
+  .set-row select{padding:8px 30px 8px 12px; border:1px solid var(--line); border-radius:8px;
+    font-family:var(--sans); font-size:13px; color:var(--ink); background:#fff; cursor:pointer; outline:none; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23999' fill='none' stroke-width='1.3'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center}
+  .danger-row .set-label{color:var(--red)}
+
+
+  .qr-box{display:flex; justify-content:center; padding:24px; border:1px solid var(--line); border-radius:16px; background:#fff; margin-bottom:18px}
+  .qr-box canvas{display:block; width:200px; height:200px; image-rendering:pixelated}
+  .recv-addr{font-size:13px; text-align:center; word-break:break-all; line-height:1.6; color:var(--ink); padding:0 8px}
+
+
+  .danger-note{padding:13px 15px; border:1px solid #f0c9c9; background:#fef2f2; border-radius:10px;
+    font-size:13px; color:#b91c1c; line-height:1.6; margin:6px 0 4px}
+
+  .actions{display:flex; gap:10px; margin-bottom:30px}
+  .actions .btn{flex:1 1 0; width:auto; min-width:0; padding-left:0; padding-right:0}
+
+
+  .sec-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px}
+  .sec-head h2{margin:0}
+  .ins-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px}
+  .ins{border:1px solid var(--line); border-radius:12px; overflow:hidden; cursor:pointer; transition:.15s; background:#fff}
+  .ins:hover{border-color:var(--ink); transform:translateY(-1px)}
+  .ins img,.ins svg{width:100%; aspect-ratio:1; display:block}
+  .ins .meta{padding:7px 9px; border-top:1px solid var(--line); font-size:11px}
+  .ins .meta .h{font-family:var(--mono); color:var(--ink)}
+  .ins .meta .r{color:var(--faint); margin-top:2px}
+  .empty{text-align:center; color:var(--faint); font-size:13px; padding:40px 0; border:1px dashed var(--line); border-radius:12px}
+
+
+  .tabs{display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:18px}
+  .tab{background:none; border:0; padding:12px 18px 11px; font-size:14px; color:var(--gray); cursor:pointer;
+       border-bottom:2px solid transparent; margin-bottom:-1px; transition:.15s; font-family:inherit}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:var(--ink); border-bottom-color:var(--ink); font-weight:500}
+  .tab .muted{margin-left:6px; font-size:11px}
+  .tab-panel{min-height:200px; max-height:min(520px, calc(100vh - 440px));
+             overflow-y:auto; overflow-x:hidden; padding-right:4px;
+             scroll-behavior:smooth;
+             scrollbar-width:thin; scrollbar-color:#e0e0e0 transparent}
+  .tab-panel::-webkit-scrollbar{width:6px}
+  .tab-panel::-webkit-scrollbar-track{background:transparent}
+  .tab-panel::-webkit-scrollbar-thumb{background:#e0e0e0; border-radius:3px}
+  .tab-panel::-webkit-scrollbar-thumb:hover{background:#bdbdbd}
+
+
+  .tx-list{display:flex; flex-direction:column; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
+  .tx-row{display:grid; grid-template-columns:32px 1fr auto; gap:12px; align-items:center;
+          padding:14px 16px; background:#fff; cursor:pointer; transition:.12s}
+  .tx-row:hover{background:#fafafa}
+  .tx-row .dir{width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+               font-size:14px; font-weight:600; font-family:var(--mono)}
+  .tx-row.in .dir{background:#eef7f0; color:#1f7a3a}
+  .tx-row.out .dir{background:#f6f0ee; color:#9c4a2a}
+  .tx-row .info{min-width:0}
+  .tx-row .info .l1{font-size:13px; color:var(--ink); display:flex; align-items:center; gap:8px}
+  .tx-row .info .l1 .tag{font-size:10px; padding:1px 7px; border-radius:4px; background:var(--soft); color:var(--gray); font-family:var(--mono); letter-spacing:.04em}
+  .tx-row .info .l2{font-size:11px; color:var(--faint); margin-top:3px; font-family:var(--mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tx-row .amt{font-family:var(--mono); font-size:14px; font-weight:600; text-align:right; white-space:nowrap}
+  .tx-row.in .amt{color:#1f7a3a}
+  .tx-row.out .amt{color:var(--ink)}
+  .tx-row .amt .c{display:block; font-size:11px; font-weight:400; color:var(--faint); margin-top:3px}
+  .tx-row .amt .c.unconfirmed{color:#9c6a1a}
+  .tx-row .amt .c.dropped{color:#b42318}
+
+
+  .bal-card .pending{font-size:12px; color:#9c6a1a; margin-top:6px}
+
+
+  .set-ctrl{display:flex; gap:8px; align-items:center}
+
+
+  .modal-bg{position:fixed; inset:0; background:rgba(23,23,23,.32); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
+  .modal-bg.show{display:flex}
+  .modal{width:100%; max-width:420px; background:#fff; border-radius:18px; padding:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,.18); max-height:90vh; overflow-y:auto}
+  .modal h2{margin-bottom:16px}
+  .kv{display:flex; justify-content:space-between; gap:14px; padding:11px 0; border-bottom:1px solid var(--line); font-size:13px}
+  .kv:last-of-type{border-bottom:0}
+  .kv .k{color:var(--gray); white-space:nowrap}
+  .kv .v{font-family:var(--mono); text-align:right; word-break:break-all; color:var(--ink)}
+  .kv .v.big{font-size:15px; font-weight:500}
+  .origin-bar{display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--soft);
+    border-radius:9px; font-size:12px; color:var(--gray); margin-bottom:16px; font-family:var(--mono)}
+
+
+  .steps{display:flex; gap:6px; margin-bottom:22px}
+  .steps i{flex:1; height:3px; border-radius:3px; background:var(--line)}
+  .steps i.on{background:var(--ink)}
+
+  .hide{display:none !important}
+  .center{text-align:center}
+  .back{font-size:13px; color:var(--faint); cursor:pointer; margin-bottom:18px; display:inline-flex; align-items:center; gap:5px}
+  .back:hover{color:var(--ink)}
+  .spinner{display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .toast{position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); opacity:0;
+    background:var(--ink); color:#fff; font-size:13px; padding:11px 18px; border-radius:10px; z-index:80; transition:.25s; pointer-events:none}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  @media(max-width:480px){
+    .mn-grid{grid-template-columns:repeat(2,1fr)}
+    header{padding:16px}
+    main{padding:24px 16px 50px}
+  }
+</style>
+</head>
+<body>
+<script>
+
+  (function(){
+    try{
+      var has = !!localStorage.getItem('btcc_wallet_v1');
+      document.body.classList.add('centered');
+      document.body.classList.add(has ? 'boot-unlock' : 'boot-welcome');
+    }catch(e){ document.body.classList.add('centered'); }
+  })();
+</script>
+<canvas id="bgCanvas" aria-hidden="true"></canvas>
+<header>
+  <div class="wm">BTCC<span class="sub">钱包</span></div>
+  <div class="net"><span class="dot off" id="netDot"></span><span id="netTxt">未连接</span></div>
+</header>
+
+<main>
+
+  <section class="card view" id="v-welcome">
+    <div class="kicker">BTCC 链原生钱包</div>
+    <h1>管理你的 BTCC 资产</h1>
+    <p class="lead">非托管钱包，私钥经密码加密后只保存在你这台设备的浏览器里，永不上传服务器。</p>
+    <p class="lead note">请务必备份助记词，<b>丢失将无法找回</b>。</p>
+    <button class="btn" onclick="W.go('create')">创建新钱包</button>
+    <div class="btn-row"><button class="btn ghost" onclick="W.go('import')">导入已有助记词</button></div>
+  </section>
+
+
+  <section class="card view hide" id="v-create">
+    <div class="back" onclick="W.go('welcome')">← 返回</div>
+    <div class="steps"><i id="cs0"></i><i id="cs1"></i><i id="cs2"></i></div>
+
+
+    <div id="c-step0">
+      <h1>备份助记词</h1>
+      <p class="lead">这 12 个词是你钱包的唯一备份。请按顺序抄在纸上，离线保存。任何人拿到它就能控制你的资产。</p>
+      <div class="mn-grid" id="mnGrid"></div>
+      <div class="mn-warn">不要截图，也不要放在任何电子设备上，建议手抄保存在安全的地方。管理员不会向你索要助记词。</div>
+      <button class="btn" onclick="W.toVerify()">我已抄写，下一步</button>
+    </div>
+
+
+    <div id="c-step1" class="hide">
+      <h1>验证备份</h1>
+      <p class="lead">请按提示选出对应位置的词，确认你已正确抄写。</p>
+      <div id="verifyBox"></div>
+      <div class="err" id="verifyErr"></div>
+    </div>
+
+
+    <div id="c-step2" class="hide">
+      <h1>设置解锁密码</h1>
+      <div id="cPwWrap">
+      <p class="lead">密码用于加密本地存储的助记词。每次解锁钱包都需要它。</p>
+      <label>密码（至少 8 位）</label>
+      <input type="password" id="cPw1" placeholder="输入密码">
+      <label>确认密码</label>
+      <input type="password" id="cPw2" placeholder="再次输入">
+      </div>
+      <p class="lead hide" id="cAddNote">这是你的又一个钱包，和现有钱包相互独立、各自的资产分开。它会用你当前的解锁密码一起加密保存，不需要再设新密码。</p>
+      <div class="err" id="cPwErr"></div>
+      <button class="btn" id="cFinish" onclick="W.finishCreate()" style="margin-top:20px">创建钱包</button>
+    </div>
+  </section>
+
+
+  <section class="card view hide" id="v-import">
+    <div class="back" onclick="W.go('welcome')">← 返回</div>
+    <h1>导入钱包</h1>
+    <p class="lead">输入你的 12 或 24 词助记词，用空格分隔。</p>
+    <label>助记词</label>
+    <textarea id="impMn" class="mono" rows="4" placeholder="word1 word2 word3 ..."></textarea>
+    <div id="impPwWrap">
+      <label>设置解锁密码（至少 8 位）</label>
+      <input type="password" id="impPw1" placeholder="输入密码">
+      <label>确认密码</label>
+      <input type="password" id="impPw2" placeholder="再次输入">
+    </div>
+    <p class="lead hide" id="impAddNote">这套助记词会作为又一个独立钱包导入，和现有钱包资产分开。它会用你当前的解锁密码一起加密保存，不需要再设新密码。</p>
+    <div class="err" id="impErr"></div>
+    <button class="btn" onclick="W.finishImport()" style="margin-top:20px">导入并加密保存</button>
+  </section>
+
+
+  <section class="card view hide" id="v-unlock">
+    <div class="kicker">钱包已锁定</div>
+    <h1>解锁钱包</h1>
+    <p class="lead">输入密码以解锁。密码仅在本机校验，不会发送到任何服务器。</p>
+    <label>密码</label>
+    <input type="password" id="unlockPw" placeholder="输入密码" onkeydown="if(event.key==='Enter')W.doUnlock()">
+    <div class="err" id="unlockErr"></div>
+    <button class="btn" onclick="W.doUnlock()" style="margin-top:20px">解锁</button>
+  </section>
+
+
+  <section class="card wide view hide" id="v-home">
+
+    <div class="wallet-bar hide" id="walletBar">
+      <select id="walletSel" onchange="W.switchWallet(this.value)"></select>
+    </div>
+
+    <div class="bal-card">
+      <div class="lab">可用余额</div>
+      <div class="amt"><span id="balSpendable">0</span><span class="u">BTCC</span></div>
+      <div class="lock hide" id="balLock"></div>
+      <div class="pending hide" id="balPending"></div>
+      <div class="addr-row">
+        <div class="a" id="myAddr">—</div>
+        <span class="copy" id="copyAddr" onclick="W.copyAddr()">复制</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="W.go('send')">转账</button>
+      <button class="btn ghost" onclick="W.go('receive')">收款</button>
+      <button class="btn ghost" id="refreshBtn" onclick="W.refresh(true)">刷新</button>
+    </div>
+
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" id="tab-tx" onclick="W.switchTab('tx')" role="tab">交易记录</button>
+      <button class="tab" id="tab-ins" onclick="W.switchTab('ins')" role="tab">我的NFT <span class="muted mono" id="insCount"></span></button>
+    </div>
+
+
+    <div class="tab-panel" id="panel-tx">
+      <div id="txWrap"><div class="empty">加载中…</div></div>
+    </div>
+
+
+    <div class="tab-panel hide" id="panel-ins">
+      <div id="insWrap"><div class="empty">加载中…</div></div>
+    </div>
+
+
+    <div class="settings">
+      <div class="set-row">
+        <div class="set-label">新建钱包<span class="set-sub">生成一套全新助记词，作为一个独立钱包，和现有钱包资产分开</span></div>
+        <button class="mini" onclick="W.addWallet()">新建</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">导入助记词<span class="set-sub">用一套已有的 12/24 词助记词，作为又一个独立钱包导入</span></div>
+        <button class="mini" onclick="W.go('import')">导入</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">自动锁定<span class="set-sub">无操作多久后自动锁定，再次使用需输入密码</span></div>
+        <div class="set-ctrl">
+          <select id="autoLockSel" onchange="W.setAutoLock(this.value)">
+            <option value="0">从不</option>
+            <option value="300000">5 分钟</option>
+            <option value="900000">15 分钟</option>
+            <option value="1800000">30 分钟</option>
+            <option value="3600000">1 小时</option>
+          </select>
+          <button class="mini" onclick="W.lock()">立即锁定</button>
+        </div>
+      </div>
+      <div class="set-row">
+        <div class="set-label">导入节点钱包地址<span class="set-sub">把官方客户端 / 节点钱包的地址(WIF 私钥或 descriptor)导入，可查看其 NFT 并安全转账</span></div>
+        <button class="mini" onclick="W.openImportKey()">导入</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label">管理导入地址<span class="set-sub">查看或移除已导入的地址</span></div>
+        <button class="mini" onclick="W.openManageImports()">管理</button>
+      </div>
+      <div class="set-row danger-row">
+        <div class="set-label">删除当前钱包<span class="set-sub">仅删除当前选中的这个钱包，其它钱包不受影响，需输入密码确认</span></div>
+        <button class="mini danger" onclick="W.go('delete')">删除</button>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="card view hide" id="v-importkey">
+    <div class="back" onclick="W.go('home')">← 返回</div>
+    <h1>导入节点钱包地址</h1>
+    <p class="lead">把官方客户端 / 节点钱包里的地址导入到此钱包。导入后即可查看该地址的 NFT，并通过本钱包的防烧毁保护（避免误花掉承载铭文的 UTXO）安全转账。</p>
+    <div class="danger-note">本地加密保存，请妥善备份。</div>
+
+    <div class="hint" style="background:#f7f8fa;border:1px solid #e6e8ec;border-radius:10px;padding:12px 14px;margin:4px 0 14px;line-height:1.7">
+      <b>第一步 · 在节点拿到私钥</b><br>
+      在官方客户端控制台执行：<br>
+      <span class="mono">listdescriptors true</span>（命令行则加前缀 <span class="mono">bitcoin-cli</span>）<br><br>
+      在输出里复制 <b>这一条</b>：<span class="mono">wpkh(</span> 开头、路径是 <span class="mono">/84'/0'/0'/0/*</span> 结尾的那条。<br>
+      <span style="color:#c0392b">认准 <b>84</b>（不是 86）、结尾 <b>/0/*</b>（不是 /1/*），整条 <span class="mono">wpkh(...)</span> 复制即可（末尾 <span class="mono">#校验码</span> 可不要）。</span>
+    </div>
+
+    <label>第二步 · 把 descriptor 粘到这里</label>
+    <textarea id="impKeyInput" class="mono" rows="3" placeholder="粘贴 wpkh(...) descriptor 整条&#10;（也支持直接粘单个 WIF 私钥）" oninput="W.previewImportKey()"></textarea>
+    <div class="hint" style="margin:6px 0 0">粘进去会自动识别格式并预览地址，核对无误再点确认导入。</div>
+    <label style="margin-top:14px">第三步 · 填你要用的地址</label>
+    <input type="text" id="impKeyTarget" class="mono" placeholder="填你的 cc1q 地址，只导入这一个">
+    <span class="set-sub">填上你在客户端用的那个 cc1q 地址，系统会自动从上面 descriptor 里找出它的私钥，只导这一个，不会导入一堆无关地址。</span>
+    <label style="margin-top:14px">备注名(可选)</label>
+    <input type="text" id="impKeyLabel" placeholder="例如：空投地址">
+    <label style="margin-top:14px">批量导入数量（高级，可不管）</label>
+    <input type="number" id="impKeyRange" value="20" min="1" max="500" style="max-width:120px">
+    <span class="set-sub">仅当上面第三步留空时生效：收款链和找零链各导入前 N 个地址（聚合为一个钱包，覆盖整个节点钱包余额）。一般填了地址就用不到这个。</span>
+    <div id="impKeyPreview" class="hint" style="margin:12px 0;min-height:20px"></div>
+    <div class="err" id="impKeyErr"></div>
+    <button class="btn" id="impKeyBtn" style="margin-top:14px" onclick="W.finishImportKey()">确认导入</button>
+  </section>
+
+
+  <section class="card view hide" id="v-manageimports">
+    <div class="back" onclick="W.go('home')">← 返回</div>
+    <h1>管理导入地址</h1>
+    <p class="lead">这里是你导入的外部地址。移除只删除本机私钥，不影响原节点钱包。</p>
+    <div class="settings" id="impListWrap"><div class="empty">加载中…</div></div>
+    <button class="btn ghost" style="margin-top:18px" onclick="W.openImportKey()">+ 再导入一个</button>
+  </section>
+
+
+  <section class="card view hide" id="v-receive">
+    <div class="back" onclick="W.go('home')">← 返回</div>
+    <h1>收款</h1>
+    <p class="lead">向他人出示此二维码或地址，即可收取 BTCC 与铭文。</p>
+    <div class="qr-box"><canvas id="qrCanvas"></canvas></div>
+    <div class="recv-addr mono" id="recvAddr">—</div>
+    <button class="btn" onclick="W.copyAddr()" style="margin-top:18px">复制地址</button>
+  </section>
+
+
+  <section class="card view hide" id="v-delete">
+    <div class="back" onclick="W.go('home')">← 返回</div>
+    <h1>删除钱包</h1>
+    <p class="lead">此操作会从本机浏览器移除当前钱包的加密数据。<b>没有助记词将无法找回。</b>请先确认你已离线备份助记词。</p>
+    <div class="danger-note">删除后，除非用助记词重新导入，否则此钱包内的资产将永久无法访问。</div>
+    <label>输入解锁密码以确认</label>
+    <input type="password" id="delPw" placeholder="输入密码">
+    <div class="err" id="delErr"></div>
+    <button class="btn danger" onclick="W.confirmDelete()" style="margin-top:18px">我已备份，确认删除</button>
+  </section>
+
+
+  <section class="card view hide" id="v-send">
+    <div class="back" onclick="W.go('home')">← 返回</div>
+    <h1>转账</h1>
+    <p class="lead">向另一个 BTCC 地址发送 BTCC。手续费按链上费率自动计算。</p>
+    <label>收款地址</label>
+    <input type="text" id="sendTo" class="mono" placeholder="cc1q...">
+    <label>金额（BTCC）</label>
+    <input type="text" id="sendAmt" class="mono" placeholder="0.00" inputmode="decimal">
+    <div class="hint" id="sendBalHint"></div>
+    <div class="err" id="sendErr"></div>
+    <button class="btn" id="sendBtn" onclick="W.prepareSend()" style="margin-top:20px">下一步</button>
+  </section>
+
+
+  <section class="card view hide" id="v-ins">
+    <div class="back" onclick="W.go('home')">← 返回</div>
+    <div id="insDetail"></div>
+  </section>
+</main>
+
+
+<div class="modal-bg" id="signModal">
+  <div class="modal">
+    <h2 id="signTitle">确认操作</h2>
+    <div class="origin-bar">来自 nft.btc-classic.org</div>
+    <div id="signBody"></div>
+    <div class="err" id="signErr"></div>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn ghost" onclick="W.closeSign()">取消</button>
+      <button class="btn" id="signConfirm" onclick="W.confirmSign()">确认并签名</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/static/qrcode.min.js"></script>
+<script src="/static/wallet-bg.js?v=20260614d"></script>
+<script src="/static/wallet-core.js?v=20260620e"></script>
+<script src="/static/wallet-ui.js?v=20260621b"></script>
+</body>
+</html>

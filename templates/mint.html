@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC·STAMP</title>
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v=20260616a">
+<link rel="apple-touch-icon" href="/static/favicon.svg?v=20260616a">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff; --ink:#171717; --gray:#666666; --faint:#999999;
+    --line:#ebebeb; --fill:#171717;
+    --sans:'Geist',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    --mono:'Geist Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    display:flex; flex-direction:column; min-height:100%;
+    position:relative; overflow-x:hidden;
+  }
+  .walls{position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+  .col{position:absolute; top:0; width:150px; display:flex; flex-direction:column; gap:18px; opacity:.5}
+  .col.l{left:max(8px,calc(50% - 600px))}
+  .col.r{right:max(8px,calc(50% - 600px))}
+  .col img{width:150px; height:150px; border-radius:14px; display:block; image-rendering:pixelated;
+           box-shadow:0 1px 2px rgba(0,0,0,.04), 0 0 0 1px rgba(0,0,0,.05)}
+  @keyframes up{from{transform:translateY(0)} to{transform:translateY(-50%)}}
+  @keyframes down{from{transform:translateY(-50%)} to{transform:translateY(0)}}
+  .col.l{animation:up 60s linear infinite}
+  .col.r{animation:down 60s linear infinite}
+  .walls::before{content:''; position:absolute; inset:0; z-index:2;
+    background:linear-gradient(90deg, rgba(255,255,255,.15) 0%, rgba(255,255,255,.78) 22%, #fff 40%, #fff 60%, rgba(255,255,255,.78) 78%, rgba(255,255,255,.15) 100%)}
+  .walls::after{content:''; position:absolute; inset:0; z-index:2;
+    background:linear-gradient(180deg, #fff 0%, rgba(255,255,255,0) 16%, rgba(255,255,255,0) 84%, #fff 100%)}
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px 32px; font-size:14px;
+    position:relative; z-index:3;
+  }
+  .brand{display:flex; align-items:center; gap:11px; color:var(--ink); text-decoration:none}
+  .brand-mark{width:30px;height:30px;border:1px solid #171717;border-radius:9px;display:grid;place-items:center;background:#171717;color:#fff;font-family:var(--mono);font-size:12px;font-weight:500;letter-spacing:-.04em;line-height:1}
+  .brand-text{display:flex; flex-direction:column; gap:1px}
+  .brand-name{font-weight:600; letter-spacing:-.03em; font-size:15px; line-height:1}
+  .brand-name .d{color:var(--faint); font-weight:400; margin:0 1px}
+  .brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.09em;color:var(--faint);line-height:1;text-transform:uppercase}
+  .stat-net{font-family:var(--mono); font-size:12px; color:var(--faint); display:flex; align-items:center; gap:7px}
+  .head-right{display:flex; align-items:center; gap:14px}
+  .wallet-link{padding:7px 14px; font-size:13px; text-decoration:none; line-height:1}
+  .dot{width:6px;height:6px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+
+  main{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:34px 24px 46px; position:relative; z-index:3}
+  .inner{width:100%; max-width:620px; background:rgba(255,255,255,.86); backdrop-filter:blur(4px); border:1px solid rgba(235,235,235,.9); border-radius:24px; padding:30px 32px; box-shadow:0 24px 80px rgba(0,0,0,.04)}
+
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); text-align:center; margin-bottom:14px}
+  h1{font-size:34px; font-weight:600; letter-spacing:-.035em; line-height:1.12; text-align:center; margin-bottom:10px}
+  .lead{font-size:15px; color:var(--gray); text-align:center; line-height:1.7; margin-bottom:34px}
+
+  .phase-card{margin-top:8px}
+  .prog-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px}
+  .blk{font-family:var(--mono)}
+  .blk .n{font-size:30px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .blk .c{font-size:30px; font-weight:500; color:var(--ink)}
+  .blk .t{font-size:30px; font-weight:500; color:var(--faint)}
+  .blk .lab{display:block; font-family:var(--sans); font-size:12px; color:var(--faint); margin-top:5px; letter-spacing:.01em}
+  .prog-head .right{text-align:right}
+  .track{height:6px; background:var(--line); border-radius:6px; position:relative; overflow:hidden}
+  .track > i{position:absolute; left:0; top:0; height:100%; width:0%; background:var(--fill); border-radius:6px; transition:width .8s cubic-bezier(.4,0,.2,1)}
+  .sub{display:flex; justify-content:space-between; align-items:baseline; margin-top:14px; font-size:13px; color:var(--gray)}
+  .sub .left{font-family:var(--mono)}
+  .sub .left b{color:var(--ink); font-weight:500}
+  .sub .right{font-family:var(--mono); color:var(--faint); font-size:12px}
+  .sub.hide-sub{display:none}
+
+  .phases{margin-top:36px; border-top:1px solid var(--line)}
+  .phase{display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:16px 12px; margin:0 -12px; border-bottom:1px solid var(--line);
+    border-radius:10px; transition:background .15s ease}
+  .phase:hover{background:#fafafa}
+  .phase.cur{background:#f7f7f7}
+  .ph-l{display:flex; align-items:center; gap:10px; min-width:0}
+  .ph-slot{width:6px; height:6px; flex:none; display:flex; align-items:center; justify-content:center}
+  .ph-no{font-family:var(--mono); font-size:13px; font-weight:500; color:var(--faint); white-space:nowrap}
+  .phase.cur .ph-no{color:var(--ink)}
+  .ph-tag{font-size:11px; line-height:1; color:var(--gray); background:#fff; border:1px solid var(--line); border-radius:999px; padding:4px 9px; white-space:nowrap}
+  .phase.cur .ph-tag{color:var(--ink); border-color:#dcdcdc}
+  .ph-note{font-size:13px; color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ph-dot{width:6px; height:6px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+  .ph-r{text-align:right; white-space:nowrap; display:flex; flex-direction:column; gap:4px; align-items:flex-end}
+  .ph-qty{font-family:var(--mono); font-size:14px; font-weight:500; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1.1}
+  .ph-qty .u{color:var(--faint); font-size:11px; font-weight:400; margin-left:2px}
+  .ph-rem{font-family:var(--mono); font-size:12px; color:var(--gray); line-height:1.1}
+  .ph-status{font-size:11px; line-height:1; color:var(--gray); border:1px solid var(--line); border-radius:999px; padding:4px 8px; background:#fff}
+  .phase.cur .ph-status{color:#16a34a; border-color:rgba(22,163,74,.22); background:rgba(22,163,74,.06)}
+  .ph-price{font-family:var(--mono); font-size:12px; color:var(--faint); line-height:1.1}
+  .ph-price .free{color:#16a34a; font-weight:600; font-style:normal}
+
+  .mint{margin-top:54px; border-top:1px solid var(--line); padding-top:24px}
+  .mint-head{display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin-bottom:18px}
+  .mint-head h2{font-size:18px; font-weight:600; letter-spacing:-.02em}
+  .mint-head .mini{font-family:var(--mono); font-size:12px; color:var(--faint)}
+  .connect-box{display:flex; flex-direction:column; gap:10px; border:1px solid var(--line); border-radius:14px; padding:14px; background:rgba(255,255,255,.72)}
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+  .row input{flex:1; min-width:220px; border:1px solid var(--line); border-radius:10px; padding:11px 13px; font:inherit; outline:none; background:#fff}
+  .row input:focus{border-color:#cfcfcf}
+  .btn{appearance:none; border:1px solid #171717; background:#171717; color:#fff; border-radius:10px; padding:11px 16px; font:inherit; font-weight:500; cursor:pointer}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .btn.ghost{background:#fff; color:#171717; border-color:var(--line)}
+  .addrline{font-family:var(--mono); font-size:12px; color:var(--faint); word-break:break-all}
+  .wallet-state{display:none}
+  .wallet-state.on{display:block}
+  .wallet-state .a{font-family:var(--mono); font-size:12px; color:var(--ink); word-break:break-all}
+  .wallet-state .b{font-size:12px; color:var(--faint); margin-top:2px}
+
+  .controls{display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin-top:18px}
+  .qty-box{display:flex; align-items:center; min-width:80px}
+  .qty-box input{width:80px;text-align:center;border:1px solid var(--ink);border-radius:8px;height:36px;font-family:var(--mono);font-size:15px;font-weight:500;background:#fff;outline:none}
+  .qty-box input:focus{border-color:#111; box-shadow:0 0 0 2px rgba(0,0,0,.06)}
+  .total{font-size:14px;color:var(--gray);margin-top:14px}
+  .total b{font-family:var(--mono); color:var(--ink); font-weight:500}
+  .note{font-size:12px;color:var(--faint);margin-top:8px;line-height:1.55}
+  .actions{margin-top:18px; display:flex; gap:10px; flex-wrap:wrap}
+  .actions .btn{padding:12px 18px}
+
+  .pay-panel{display:none; margin-top:18px; border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff}
+  .pay-panel h3{font-size:15px; font-weight:600; margin-bottom:6px}
+  .pay-panel .s{font-family:var(--mono); font-size:13px; color:var(--faint); margin-bottom:10px}
+  .amt{font-family:var(--mono); font-size:28px; font-weight:500; letter-spacing:-.02em; margin:8px 0 6px}
+  .status-line{font-size:13px; color:var(--gray); padding:10px 0 0}
+  .hint{font-size:12px; color:var(--faint); margin-top:5px; font-family:var(--mono)}
+  .hide{display:none!important}
+
+  .rule{height:1px; background:var(--line); margin:40px 0 0}
+  .foot-stats{display:flex; justify-content:space-between; align-items:center; padding-top:18px}
+  .foot-stats .item .v{font-family:var(--mono); font-size:22px; font-weight:500; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .foot-stats .item .k{font-size:12px; color:var(--faint); margin-top:4px}
+  .foot-stats .item.r{text-align:right}
+
+  footer{text-align:center; padding:26px; font-size:12px; color:#bcbcbc; font-family:var(--mono); letter-spacing:.02em; position:relative; z-index:3}
+
+  @media(max-width:1080px){ .walls{display:none} }
+  @media(max-width:560px){
+    header{padding:18px 20px}
+    .stat-net{display:none}
+    h1{font-size:24px}
+    .blk .n,.blk .c,.blk .t{font-size:24px}
+    .ph-note{display:none}
+    .phase{padding:15px 10px; margin:0 -10px}
+    .mint-head{display:block}
+    .foot-stats{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .foot-stats .item.r{text-align:left}
+  }
+</style>
+</head>
+<body>
+  <div class="walls" id="walls">
+    <div class="col l" id="colL"></div>
+    <div class="col r" id="colR"></div>
+  </div>
+  <header>
+    <a class="brand" href="/" aria-label="CC·STAMP">
+      <span class="brand-mark">CC</span>
+      <span class="brand-text"><span class="brand-name">CC<span class="d">·</span>STAMP</span><span class="brand-sub">ON BTCC</span></span>
+    </a>
+    <div class="head-right">
+      <a class="btn ghost wallet-link" href="/wallet">钱包</a>
+      <div class="stat-net" id="netStat"><span class="dot"></span>BTCC MAINNET</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="inner">
+      <div class="kicker">MINT</div>
+      <h1>连接钱包后铸造</h1>
+      <p class="lead">分三批开放。第一批白名单由官方直接空投，公开批连接钱包后铸造。</p>
+
+      <div class="phase-card">
+        <div class="prog-head">
+          <div class="blk">
+            <span class="n c" id="phaseName">—</span>
+            <span class="lab">当前批次</span>
+          </div>
+          <div class="blk right">
+            <span class="n t" id="phaseRemain">—</span>
+            <span class="lab">本批剩余</span>
+          </div>
+        </div>
+        <div class="track"><i id="phaseBar"></i></div>
+        <div class="sub" id="phaseSub">
+          <span class="left">切批 <b id="phaseClock">—</b></span>
+          <span class="right"><span id="phaseHint">—</span></span>
+        </div>
+      </div>
+
+      <div class="phases" id="phaseList"></div>
+
+      <div class="mint">
+        <div class="mint-head">
+          <h2>铸造</h2>
+          <div class="mini">当前单价 <span id="priceMini">{{price}} BTCC</span></div>
+        </div>
+
+        <div class="connect-box" id="connectBox">
+          <div class="row" style="justify-content:space-between; align-items:center">
+            <div style="font-size:13px;color:var(--gray)">第一批无需用户操作；公开批使用 BTCC 钱包签名付款</div>
+            <button class="btn ghost" id="walletBtn" type="button" onclick="connectWallet()">连接钱包</button>
+          </div>
+          <div class="row" id="walletUnlockRow" style="margin-top:10px; gap:8px; display:none">
+            <input id="walletPw" type="password" placeholder="钱包密码" style="flex:1; min-width:180px">
+            <button class="btn ghost" type="button" onclick="unlockWallet()">解锁并连接</button>
+          </div>
+          <div class="wallet-state on" id="walletOn" style="display:block">
+            <div class="a" id="walletAddr">未连接</div>
+            <div class="b" id="walletHint">如果本机已经保存钱包，输入密码即可在当前页直接连接。</div>
+            <div class="b" id="walletBal" style="display:none;margin-top:4px;font-weight:600;color:var(--ink,#111)">可用余额：<span id="walletBalVal">—</span> BTCC</div>
+          </div>
+          <div class="addrline" id="eligLine">当前未检测资格</div>
+        </div>
+
+        <div class="controls">
+          <div>
+            <div class="note" style="margin:0 0 6px">数量</div>
+            <div class="qty-box">
+              <input id="qty" type="number" min="1" step="1" value="1" inputmode="numeric" oninput="syncQtyInput()">
+            </div>
+          </div>
+          <div style="flex:1;min-width:180px">
+            <div class="total">本次确认：<b id="total">—</b></div>
+            <div class="note" id="mintNote">连接钱包后自动判断当前批次资格。</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="mintBtn" onclick="createOrder()">连接钱包后铸造</button>
+        </div>
+
+        <div class="pay-panel" id="payPanel">
+          <h3>铸造状态</h3>
+          <div class="s" id="payStatus">等待连接钱包</div>
+          <div class="amt" id="payAmt"></div>
+          <div class="status-line" id="statusLine">等待连接钱包…</div>
+          <div class="hint" id="expHint"></div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+      <div class="foot-stats">
+        <div class="item"><div class="v">{{ "{:,}".format(total) }}</div><div class="k">总量</div></div>
+        <div class="item"><div class="v">免费 / 2.11 / 4.22</div><div class="k">单价</div></div>
+        <div class="item r"><div class="v">{{limit}}</div><div class="k">每地址限购</div></div>
+        <div class="item r"><div class="v" id="soldCount">0</div><div class="k">已铸造</div></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>BTCC · 链上原生铭刻 · 定时开放</footer>
+
+<script src="/static/wallet-core.js?v=20260620e"></script>
+<script>
+const PRICE={{price}}, LIMIT={{limit}};
+let qty=1, curOrder=null, pollTimer=null, pollSeq=0;
+const state={addr:null, connected:false, accIdx:0, isImport:false, addrs:[], eligible:false, phaseIdx:null, reason:'', free:false, price:PRICE, limit:LIMIT};
+function walletIndex(){try{return (JSON.parse(localStorage.getItem('ccstamp_wallet_meta')||'{}').current)||0;}catch(e){return 0;}}
+function resolveActiveAddr(){
+  let sel=null;
+  try{ sel=JSON.parse(localStorage.getItem('ccstamp_active_sel')||'null'); }catch(e){ sel=null; }
+  if(sel && sel.addr){
+    state.addr=sel.addr;
+    state.isImport=!!sel.isImport;
+    state.addrs=Array.isArray(sel.addrs)&&sel.addrs.length?sel.addrs:[sel.addr];
+    if(!state.isImport && typeof sel.sel==='string' && sel.sel.indexOf('hd:')===0){
+      state.accIdx=parseInt(sel.sel.slice(3))||0;
+    }else{
+      state.accIdx=0;
+    }
+    return true;
+  }
+  try{
+    state.accIdx=(window.BTCCWallet&&BTCCWallet.activeWallet)?BTCCWallet.activeWallet():walletIndex();
+    state.addr=BTCCWallet.getAddress(state.accIdx);
+    state.isImport=false; state.addrs=[state.addr];
+    return true;
+  }catch(e){ return false; }
+}
+function clampQty(v){
+  const n=parseInt(v,10);
+  if(!Number.isFinite(n)) return 1;
+  return Math.max(1, Math.min(state.limit || LIMIT, n));
+}
+function qtyPrice(){
+  if(!state.connected || state.phaseIdx==null) return 0;
+  if(state.phaseIdx===1 || state.free) return 0;
+  if(state.phaseIdx===2) return 2.11;
+  return 4.22;
+}
+function updateQtyUI(){
+  const el=document.getElementById('qty');
+  qty=clampQty(el ? el.value : qty);
+  if(el) el.value=qty;
+  const p=qtyPrice();
+  document.getElementById('total').innerText = p===0 ? '官方空投' : ((qty*p).toFixed(2)+' BTCC');
+  document.getElementById('priceMini').innerText = p===0 ? '官方空投' : (p.toFixed(2)+' BTCC');
+}
+function syncQtyInput(){
+  updateQtyUI();
+}
+function chQty(d){
+  const el=document.getElementById('qty');
+  qty = clampQty((el ? el.value : qty) + d);
+  if(el) el.value=qty;
+  updateQtyUI();
+}
+function fmtLeft(s){if(s==null)return '不限时';s=Math.max(0,parseInt(s||0));const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}时${String(m).padStart(2,'0')}分`:`${m}分${String(sec).padStart(2,'0')}秒`;}
+function renderPhase(p){
+  if(!p)return;
+  document.getElementById('phaseName').innerText=p.name;
+  document.getElementById('phaseRemain').innerText=(p.available||0).toLocaleString();
+  const sub=document.getElementById('phaseSub');
+  if(p.unlimited){
+    sub.classList.add('hide-sub');
+    document.getElementById('phaseClock').innerText='—';
+    document.getElementById('phaseHint').innerText='';
+  }else{
+    sub.classList.remove('hide-sub');
+    document.getElementById('phaseClock').innerText=fmtLeft(p.seconds_left);
+    document.getElementById('phaseHint').innerText=`${p.name}开放 3 小时`;
+  }
+  document.getElementById('phaseBar').style.width = p.unlimited ? '100%' : (p.seconds_left ? Math.max(4, Math.min(100, 100 - (p.seconds_left / (3*3600))*100)).toFixed(2)+'%' : '100%');
+  const list=document.getElementById('phaseList'); list.innerHTML='';
+  (p.phases||[]).forEach(x=>{const d=document.createElement('div');d.className='phase '+(x.current?'cur':'');
+    const price=x.price?`${x.price} BTCC`:'免费';
+    const rem=Number(x.remaining_scope||0).toLocaleString();
+    const status=x.status_label || (x.current?'进行中':(x.ended?'已结束':'待开放'));
+    d.innerHTML=`<div class="ph-l"><span class="ph-slot">${x.current?'<span class="ph-dot"></span>':''}</span><span class="ph-no">第${x.no}批</span><span class="ph-tag">${x.tag}</span><span class="ph-note">${x.note}</span></div><div class="ph-r"><span class="ph-status">${status}</span><span class="ph-rem">剩余 ${rem} 枚</span><span class="ph-price">${x.price ? price : '<b class="free">免费</b>'}</span></div>`; list.appendChild(d);});
+}
+async function loadStats(){
+  const r=await fetch('/api/stats',{cache:'no-store'});const j=await r.json();
+  document.getElementById('soldCount').innerText=j.inscribed;
+  document.getElementById('priceMini').innerText=(j.price ? j.price.toFixed(2)+' BTCC' : '签名确认');
+  renderPhase(j.phase);
+}
+async function refreshEligibility(){
+  if(!state.addr){
+    document.getElementById('eligLine').innerText='当前未检测资格';
+    document.getElementById('mintNote').innerText='连接钱包后自动判断当前批次资格。';
+    state.eligible=false; return false;
+  }
+  try{
+    const r=await fetch('/api/eligibility?addr='+encodeURIComponent(state.addr),{cache:'no-store'});
+    const j=await r.json();
+    state.eligible=!!j.eligible; state.phaseIdx=j.phase?.idx ?? null; state.reason=j.reason||'';
+    state.free = !!(j.phase && j.phase.idx===1);
+    state.minted = j.minted||0; state.remainingQuota = (j.remaining_quota==null?50:j.remaining_quota);
+    state.limit = j.phase?.idx === 1 ? 10 : Math.min(50, state.remainingQuota||50);
+    state.price = state.free ? 0 : (j.phase?.price || PRICE);
+    const phaseText = j.phase ? `当前参与：第${j.phase.no}批 · ${j.phase.idx===1 ? '官方空投' : state.price.toFixed(2)+' BTCC'}` : j.reason;
+    document.getElementById('eligLine').innerText = j.phase?.idx===1 ? '第一批白名单由官方直接空投，无需连接钱包或签名。' : (phaseText + (j.whitelisted ? ' · 白名单已登记' : ''));
+    const reachedLimit = !j.eligible && state.remainingQuota<=0 && j.phase?.idx!==1;
+    document.getElementById('mintNote').innerText = j.phase?.idx===1
+      ? '你只需要提供官方客户端钱包地址，官方会直接发放每地址 10 枚。'
+      : (state.eligible
+          ? (state.minted>0 ? `已铸 ${state.minted} 枚，还可铸 ${state.remainingQuota} 枚，可继续铸造。` : '资格通过，可以直接铸造。')
+          : (reachedLimit ? `该地址已达每地址上限 ${j.limit||50} 枚。` : j.reason));
+    document.getElementById('mintBtn').disabled = !state.eligible;
+    document.getElementById('mintBtn').innerText = j.phase?.idx===1 ? '第一批自动空投' : (state.eligible ? (state.minted>0 ? '继续铸造' : '开始铸造') : (reachedLimit ? '已达上限' : '当前无资格'));
+    document.getElementById('payAmt').innerText = state.free ? '官方空投' : ((state.price||0).toFixed(2)+' BTCC');
+    updateQtyUI();
+    return state.eligible;
+  }catch(e){
+    document.getElementById('eligLine').innerText='资格检测失败';
+    state.eligible=false; return false;
+  }
+}
+async function refreshWalletBalance(){
+  const bal=document.getElementById('walletBal'), val=document.getElementById('walletBalVal');
+  if(!state.connected || !state.addr){ if(bal) bal.style.display='none'; return; }
+  if(bal) bal.style.display='block';
+  if(val) val.innerText='…';
+  try{
+    const j=await fetch('/api/wallet/utxos?address='+encodeURIComponent(state.addr),{cache:'no-store'}).then(r=>r.json());
+    if(val) val.innerText = j.error ? '查询失败' : Number(j.spendable||0).toFixed(4);
+  }catch(e){ if(val) val.innerText='查询失败'; }
+}
+async function loadWalls(){
+  if(window.innerWidth <= 1080) return;
+  try{
+    const r = await fetch('/api/showcase',{cache:'no-store'});
+    if(!r.ok) return;
+    const d = await r.json();
+    const items = d.items||[];
+    if(!items.length) return;
+    const half = Math.ceil(items.length/2);
+    const setL = items.slice(0, half);
+    const setR = items.slice(half);
+    const fill = (el, arr)=>{
+      const seq = arr.concat(arr);
+      el.innerHTML = seq.map(u=>`<img src="${u}" loading="lazy" alt="">`).join('');
+    };
+    fill(document.getElementById('colL'), setL.length?setL:items);
+    fill(document.getElementById('colR'), setR.length?setR:items);
+  }catch(e){}
+}
+function setWalletUI(connected, addr){
+  state.connected=connected; state.addr=addr||null;
+  const hasWallet = !!(window.BTCCWallet && BTCCWallet.exists && BTCCWallet.exists());
+  const unlockRow=document.getElementById('walletUnlockRow');
+  if(unlockRow) unlockRow.style.display = (!connected && hasWallet) ? 'flex' : 'none';
+  document.getElementById('walletAddr').innerText = addr || '未连接';
+  document.getElementById('walletHint').innerText = connected
+    ? '已连接，资格会自动刷新。'
+    : (hasWallet ? '输入钱包密码即可在当前页解锁连接，不需要跳转。' : '本机还没有钱包，请先到钱包页创建或导入。');
+  document.getElementById('walletBtn').innerText = connected ? '重新检测' : (hasWallet ? '检测钱包' : '去创建钱包');
+  document.getElementById('walletBtn').disabled = false;
+  document.getElementById('mintBtn').innerText = connected ? '开始铸造' : '连接钱包后铸造';
+  refreshWalletBalance();
+}
+function initWalletState(){
+  if(!window.BTCCWallet){ setWalletUI(false,null); return; }
+  if(BTCCWallet.exists() && BTCCWallet.isUnlocked && BTCCWallet.isUnlocked()){
+    try{ if(!resolveActiveAddr()) throw new Error('no addr'); setWalletUI(true, state.addr); refreshEligibility(); }
+    catch(e){ setWalletUI(false,null); }
+  }else{ setWalletUI(false,null); }
+}
+async function unlockWallet(){
+  if(!window.BTCCWallet){alert('钱包核心加载失败');return;}
+  const pwEl=document.getElementById('walletPw');
+  const pw=(pwEl&&pwEl.value||'').trim();
+  if(!pw){alert('请输入钱包密码');return;}
+  const cbtn=document.getElementById('walletBtn');
+  cbtn.disabled=true; cbtn.innerText='解锁中…';
+  try{
+    await BTCCWallet.unlock(pw);
+    if(!resolveActiveAddr()) throw new Error('无法读取钱包地址');
+    setWalletUI(true, state.addr);
+    if(pwEl) pwEl.value='';
+    await refreshEligibility();
+  }catch(e){
+    setWalletUI(false,null);
+    var msg = e.message||'解锁失败';
+    if(/did not match the expected pattern|atob|base64|InvalidCharacter/i.test(msg)){
+      msg = '本机钱包数据可能已损坏或为旧版本。请到钱包页重新解锁，若仍失败请用助记词重新导入。';
+    } else if(/密码|password|decrypt/i.test(msg)){
+      msg = '密码错误，请重试。';
+    }
+    alert(msg);
+  }
+}
+async function connectWallet(){
+  if(!window.BTCCWallet){alert('钱包核心加载失败');return;}
+  if(!BTCCWallet.exists || !BTCCWallet.exists()){ window.location.href='/wallet'; return; }
+  if(!BTCCWallet.isUnlocked || !BTCCWallet.isUnlocked()){
+    setWalletUI(false,null);
+    const pw=document.getElementById('walletPw'); if(pw) pw.focus();
+    return;
+  }
+  const cbtn=document.getElementById('walletBtn');
+  cbtn.disabled=true; cbtn.innerText='检测中…';
+  try{
+    if(!resolveActiveAddr()) throw new Error('无法读取钱包地址');
+    setWalletUI(true, state.addr);
+    await refreshEligibility();
+  }catch(e){ setWalletUI(false,null); alert(e.message||'钱包不可用'); }
+}
+async function createOrder(){
+  if(!state.connected || !state.addr){ alert('先连接钱包'); return; }
+  const ok = await refreshEligibility();
+  if(!ok){ alert(state.reason || '当前无资格'); return; }
+  const btn=document.getElementById('mintBtn'); btn.disabled=true; btn.innerText='准备中…';
+  curOrder=null;
+  try{
+    if(!state.free){
+      const need = qty * qtyPrice();
+      const bal = await fetch('/api/wallet/utxos?address='+encodeURIComponent(state.addr),{cache:'no-store'}).then(r=>r.json());
+      if(bal.error) throw new Error(bal.error);
+      const available = Number(bal.spendable || 0);
+      if(available + 1e-8 < need){
+        throw new Error(`余额不足：当前可用 ${available.toFixed(8)} BTCC，本次需要 ${need.toFixed(2)} BTCC，已为你取消本次铸造，不会锁定名额。`);
+      }
+    }
+    let authMsg='', authSig='';
+    if(state.free){
+      authMsg = `CCSTAMP_FREE_MINT|${state.addr}|${qty}|${Date.now()}`;
+      authSig = BTCCWallet.signMessage(authMsg, state.accIdx);
+    }
+    let tk = null;
+    for(let i=0;i<2 && !(tk&&tk.token);i++){
+      try{ tk = await fetch('/api/mint_token',{cache:'no-store'}).then(r=>r.json()); }
+      catch(e){ tk = null; }
+      if(!(tk&&tk.token) && i===0) await new Promise(r=>setTimeout(r,600));
+    }
+    if(!(tk&&tk.token)) throw new Error((tk&&tk.error) || '网络繁忙，请稍后重试');
+    const order = await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({qty:qty,recv_addr:state.addr,auth_msg:authMsg,auth_sig:authSig,mint_token:tk.token})}).then(r=>r.json());
+    if(order.error) throw new Error(order.error);
+    curOrder=order.order_id;
+    document.getElementById('payPanel').style.display='block';
+    document.getElementById('payStatus').innerText=order.free ? '钱包签名已完成' : '正在调用钱包签名付款…';
+    document.getElementById('payAmt').innerText=order.free ? '签名确认' : (order.amount_show.toFixed(2)+' BTCC');
+    if(order.free){ document.getElementById('statusLine').innerText='签名已提交，正在进入铸造'; startPoll(); return; }
+    const build = await fetch('/api/mint/build',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({order_id:order.order_id,from:state.addr})}).then(r=>r.json());
+    if(build.error) throw new Error(build.error);
+    const inputs=(build.inputs||[]).map(i=>({change:i.change||0,index:state.accIdx}));
+    const rawtx=BTCCWallet.signPsbt(build.psbt, inputs.length?inputs:(build.inputs||[]));
+    const br=await fetch('/api/wallet/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({rawtx,from_addr:state.addr,summary:build.summary||{},kind:'transfer'})}).then(r=>r.json());
+    if(!br.ok) throw new Error(br.error||'广播失败');
+    document.getElementById('payStatus').innerText='签名完成';
+    startPoll();
+  }catch(e){
+    if(curOrder){
+      try{
+        await fetch('/api/order/'+encodeURIComponent(curOrder)+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({recv_addr:state.addr})});
+      }catch(_e){}
+      curOrder=null;
+    }
+    document.getElementById('payPanel').style.display='none';
+    btn.disabled=false; btn.innerText=state.connected?'开始铸造':'连接钱包后铸造';
+    alert(e.message||'铸造失败');
+    await refreshEligibility();
+  }
+}
+async function pullOrderStatus(seq){
+  if(!curOrder || seq!==pollSeq)return false;
+  const j=await fetch('/api/order/'+curOrder,{cache:'no-store'}).then(r=>r.json());
+  const sl=document.getElementById('statusLine');
+  const map={awaiting:'等待付款确认…',payment_seen:'已收到付款，等待确认…',paid:'付款已确认，准备铸造…',minting:'正在铸造…',completed:'已完成',expired:'已过期',underpaid:'金额不足',refunding:'退款中',refunded:'已退款'};
+  const total=j.total||j.qty||0, ins=j.inscribed||0, pend=j.pending!=null?j.pending:(total-ins);
+  let txt=map[j.status]||j.status;
+  if(j.status==='minting'){
+    txt = `正在铸造… 已上链 ${ins}/${total} 枚`;
+    if(pend>0 && ins>0) txt += `，剩 ${pend} 枚将在区块确认后继续`;
+  }else if(j.status==='completed'){
+    txt = `已完成 · 全部 ${total} 枚已上链`;
+  }
+  sl.innerText=txt;
+  document.getElementById('payStatus').innerText=txt;
+  const left=Math.max(0,j.expires_at-Math.floor(Date.now()/1000));
+  document.getElementById('expHint').innerText=j.status==='awaiting'?`剩余 ${Math.floor(left/60)}分${left%60}秒`:(j.status==='minting'&&pend>0?'每个区块约确认一批，请耐心等待，无需重复操作':'');
+  if(['completed','expired','refunded'].includes(j.status)){
+    loadStats();
+    if(state.connected) refreshEligibility();
+    refreshWalletBalance();
+    return false;
+  }
+  return true;
+}
+function startPoll(){
+  if(pollTimer) clearTimeout(pollTimer);
+  const seq=++pollSeq; let n=0;
+  const loop=async()=>{
+    if(!curOrder || seq!==pollSeq) return;
+    let keep=true; try{keep=await pullOrderStatus(seq);}catch(e){}
+    if(!keep || !curOrder || seq!==pollSeq) return;
+    n++; pollTimer=setTimeout(loop, n<15?1000:(n<60?2000:5000));
+  };
+  loop();
+}
+function resetMint(){
+  if(pollTimer) clearTimeout(pollTimer); pollSeq++; curOrder=null;
+  document.getElementById('payPanel').style.display='none';
+  document.getElementById('mintBtn').disabled=false;document.getElementById('mintBtn').innerText=state.connected?'开始铸造':'连接钱包后铸造';
+  document.getElementById('statusLine').innerText='等待铸造…';
+  document.getElementById('expHint').innerText='';
+  loadStats();
+}
+loadWalls(); loadStats(); initWalletState(); setInterval(()=>{loadStats(); if(state.connected) refreshEligibility();},30000);
+function syncActiveFromWallet(){
+  if(!state.connected) return;
+  const prev=state.addr;
+  if(resolveActiveAddr() && state.addr && state.addr!==prev){
+    setWalletUI(true, state.addr);
+    refreshEligibility();
+    refreshWalletBalance();
+  }
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncActiveFromWallet(); });
+window.addEventListener('focus', syncActiveFromWallet);
+window.addEventListener('storage',(e)=>{ if(e.key==='ccstamp_active_sel') syncActiveFromWallet(); });
+</script>
+</body>
+</html>
