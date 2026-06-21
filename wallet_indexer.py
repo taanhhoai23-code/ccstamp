@@ -2,15 +2,48 @@ import json
 import os
 import sqlite3
 import time
-from typing import Dict, Iterable, Optional
+from typing import Dict, Optional, Set
+
 DB_PATH = os.environ.get("CCSTAMP_DB", "ccstamp.db")
 RPC_START_HEIGHT = int(os.environ.get("CCSTAMP_START_HEIGHT", "0"))
+ISSUER_ADDRESSES: Set[str] = {
+    x.strip() for x in os.environ.get("CCSTAMP_ISSUER_ADDRS", "").split(",") if x.strip()
+}
+
+
 def db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+
 def rpc_call(method: str, params=None):
-    raise NotImplementedError("请在生产环境接入 BTCC RPC")
+    raise NotImplementedError("请在部署环境接入 BTCC RPC")
+
+
+def _vout_addr(tx: Dict, n: int) -> Optional[str]:
+    vout = tx.get("vout") or []
+    if len(vout) <= n:
+        return None
+    return (vout[n].get("scriptPubKey") or {}).get("address")
+
+
+def _vin_addrs(tx: Dict) -> Set[str]:
+    out = set()
+    for vin in tx.get("vin") or []:
+        spk = ((vin.get("prevout") or {}).get("scriptPubKey") or {})
+        addr = spk.get("address")
+        if addr:
+            out.add(addr)
+    return out
+
+
+def _issuer_tx(tx: Dict) -> bool:
+    if not ISSUER_ADDRESSES:
+        return True
+    return bool(_vin_addrs(tx) & ISSUER_ADDRESSES)
+
+
 def decode_stamp_tx(tx: Dict) -> Optional[Dict]:
     vout = tx.get("vout") or []
     if len(vout) < 2:
@@ -22,28 +55,30 @@ def decode_stamp_tx(tx: Dict) -> Optional[Dict]:
     if len(asm) < 2:
         return None
     try:
-        payload = bytes.fromhex(asm[1]).decode("utf-8")
-        data = json.loads(payload)
+        data = json.loads(bytes.fromhex(asm[1]).decode("utf-8"))
     except Exception:
         return None
     if data.get("p") != "cc-stamp":
         return None
     if data.get("op") not in ("gen", "xfer"):
         return None
-    if not data.get("s"):
+    seed = data.get("s")
+    owner = _vout_addr(tx, 1)
+    if not seed or not owner:
         return None
-    owner = (vout[1].get("scriptPubKey") or {}).get("address")
-    if not owner:
-        return None
-    return {
-        "seed": data["s"],
-        "op": data["op"],
-        "owner_addr": owner,
-        "txid": tx.get("txid"),
-    }
+    return {"seed": seed, "op": data["op"], "owner_addr": owner, "txid": tx.get("txid")}
+
+
+def _valid_xfer(conn, seed: str, tx: Dict) -> bool:
+    row = conn.execute("SELECT owner_addr FROM seeds WHERE seed=? AND status='inscribed'", (seed,)).fetchone()
+    if not row or not row["owner_addr"]:
+        return False
+    return row["owner_addr"] in _vin_addrs(tx)
+
+
 def process_block(height: int):
     block_hash = rpc_call("getblockhash", [height])
-    block = rpc_call("getblock", [block_hash, 2])
+    block = rpc_call("getblock", [block_hash, 3])
     if not block:
         return 0
     conn = db()
@@ -53,19 +88,36 @@ def process_block(height: int):
             item = decode_stamp_tx(tx)
             if not item:
                 continue
-            conn.execute(
-                """
-                UPDATE seeds
-                   SET owner_addr=?, txid=?, height_at=?, status='inscribed'
-                 WHERE seed=?
-                """,
-                (item["owner_addr"], item["txid"], height, item["seed"]),
-            )
-            changed += 1
+            before = conn.total_changes
+            if item["op"] == "gen":
+                if not _issuer_tx(tx):
+                    continue
+                conn.execute(
+                    """
+                    UPDATE seeds
+                       SET owner_addr=?, txid=?, height_at=?, status='inscribed'
+                     WHERE seed=? AND status!='inscribed'
+                    """,
+                    (item["owner_addr"], item["txid"], height, item["seed"]),
+                )
+            else:
+                if not _valid_xfer(conn, item["seed"], tx):
+                    continue
+                conn.execute(
+                    """
+                    UPDATE seeds
+                       SET owner_addr=?, txid=?, height_at=?
+                     WHERE seed=? AND status='inscribed'
+                    """,
+                    (item["owner_addr"], item["txid"], height, item["seed"]),
+                )
+            changed += conn.total_changes - before
         conn.commit()
     finally:
         conn.close()
     return changed
+
+
 def run_forever(start_height: Optional[int] = None):
     height = start_height if start_height is not None else RPC_START_HEIGHT
     while True:
@@ -76,5 +128,7 @@ def run_forever(start_height: Optional[int] = None):
                 print(f"height={height} updated={n}")
             height += 1
         time.sleep(5)
+
+
 if __name__ == "__main__":
     run_forever()
