@@ -21,7 +21,7 @@ print(f"预估矿工费: {funded['fee']} BTCC")
 signed = rpc_call('signrawtransactionwithwallet', [funded['hex']], wallet=WALLET)
 assert signed['complete'], f"签名失败: {signed}"
 txid = rpc_call('sendrawtransaction', [signed['hex']], wallet=WALLET)
-print(f"\n✅ 铭文已上链!")
+print(f"\n铭文已上链!")
 print(f"TXID: {txid}")
 print(f"SEED: {SEED}")
 print(f"载体vout: 1 -> {recv_addr}")

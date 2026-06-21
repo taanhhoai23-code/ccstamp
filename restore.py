@@ -34,5 +34,5 @@ print(f"还原成功! head: {info[0]} | 徽章: {info[1]}")
 out_svg = f'restored_{txid[:8]}.svg'
 with open(out_svg, 'w') as f:
     f.write(svg)
-print(f"\n✅ 已从链上还原渲染: {out_svg}")
+print(f"\n已从链上还原渲染: {out_svg}")
 print("用 rsvg-convert 转 PNG 即可查看")
