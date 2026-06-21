@@ -23,11 +23,12 @@
   body{background:var(--bg); color:var(--ink); font-family:var(--sans);
     -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
     display:flex; flex-direction:column; min-height:100%}
-
+  /* 钻石点阵背景: 全屏 canvas, 固定在最底层, 不拦截点击.
+     用户要求全站不显钻石背景, 保持纯净不抢内容 */
   #bgCanvas{display:none}
   main,header{position:relative; z-index:1}
   a{color:inherit}
-
+  /* 顶栏 */
   header{display:flex; align-items:center; justify-content:space-between;
     padding:20px 24px; border-bottom:1px solid var(--line)}
   .wm{font-weight:600; letter-spacing:-.01em; font-size:15px}
@@ -38,11 +39,11 @@
   .dot.off{background:var(--faint);box-shadow:0 0 0 3px rgba(0,0,0,.06)}
 
   main{flex:1; display:flex; flex-direction:column; align-items:center; padding:32px 20px 60px}
-
+  /* 内容少的单卡视图(欢迎/解锁)垂直居中, 避免头重脚轻 */
   body.centered main{justify-content:center; padding-bottom:96px}
   .card{width:100%; max-width:440px}
   .wide{max-width:680px}
-
+  /* 欢迎/解锁等入口卡片放大+水平居中, 宽屏不显空不偏左 */
   body.centered .card{max-width:520px; text-align:center}
   body.centered #v-welcome h1{font-size:34px; margin-bottom:14px}
   body.centered #v-welcome .lead{font-size:15px; line-height:1.75; max-width:380px; margin-left:auto; margin-right:auto; margin-bottom:6px}
@@ -51,7 +52,8 @@
   body.centered #v-welcome .btn{padding:16px 18px; font-size:15px}
   body.centered #v-welcome .kicker{display:block}
 
-
+  /* 防刷新二次闪烁: 锁定态直接显 unlock 而非先 welcome 再切.
+     boot() 跑完会接管 .hide, 这里只管首帧. */
   body.boot-unlock #v-welcome{display:none}
   body.boot-unlock #v-unlock{display:block}
 
@@ -62,7 +64,7 @@
   .muted{color:var(--faint)}
   .mono{font-family:var(--mono)}
 
-
+  /* 按钮 */
   .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px;
     width:100%; padding:13px 18px; border-radius:10px; border:1px solid var(--ink);
     background:var(--ink); color:#fff; font-family:var(--sans); font-size:14px; font-weight:500;
@@ -78,7 +80,7 @@
   .btn-row{display:flex; gap:10px; margin-top:12px}
   .btn-row .btn{width:auto; flex:1}
 
-
+  /* 输入 */
   label{display:block; font-size:13px; color:var(--gray); margin:18px 0 7px}
   input,textarea{width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px;
     font-family:var(--sans); font-size:14px; color:var(--ink); background:#fff; outline:none; transition:border-color .15s}
@@ -88,7 +90,7 @@
   .hint{font-size:12px; color:var(--faint); margin-top:7px; line-height:1.5}
   .err{font-size:13px; color:var(--red); margin-top:10px; min-height:18px}
 
-
+  /* 助记词网格 */
   .mn-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:8px 0 4px}
   .mn-cell{display:flex; align-items:center; gap:7px; padding:9px 10px; border:1px solid var(--line);
     border-radius:8px; background:var(--soft); font-family:var(--mono); font-size:13px}
@@ -96,7 +98,7 @@
   .mn-warn{display:flex; gap:10px; padding:12px 14px; border:1px solid #f5e6c8; background:#fffbf0;
     border-radius:10px; font-size:13px; color:#92741a; line-height:1.55; margin:18px 0}
 
-
+  /* 验证选词 */
   .verify-q{font-size:14px; margin:16px 0 10px}
   .verify-q b{font-family:var(--mono)}
   .word-opts{display:flex; flex-wrap:wrap; gap:8px}
@@ -105,7 +107,7 @@
   .word-opt:hover{border-color:var(--ink)}
   .word-opt.sel{background:var(--ink); color:#fff; border-color:var(--ink)}
 
-
+  /* 资产卡 */
   .bal-card{border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:14px}
   .bal-card .lab{font-size:12px; color:var(--faint); margin-bottom:6px}
   .bal-card .amt{font-family:var(--sans); font-size:34px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1}
@@ -117,7 +119,7 @@
   .copy:hover{border-color:var(--ink); color:var(--ink)}
   .copy.ok{color:var(--green); border-color:var(--green)}
 
-
+  /* 钱包切换条 */
   .wallet-bar{display:flex; gap:8px; margin-bottom:16px}
   .wallet-bar select{flex:1; padding:9px 12px; border:1px solid var(--line); border-radius:9px;
     font-family:var(--sans); font-size:13px; color:var(--ink); background:#fff;
@@ -131,7 +133,7 @@
   .mini.danger{color:var(--red); border-color:#f0c9c9}
   .mini.danger:hover{background:#fef2f2; border-color:var(--red)}
 
-
+  /* 设置区 */
   .settings{margin-top:30px; border-top:1px solid var(--line); padding-top:8px}
   .set-row{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 0; border-bottom:1px solid var(--line)}
   .set-row:last-child{border-bottom:0}
@@ -143,19 +145,19 @@
     background-repeat:no-repeat; background-position:right 10px center}
   .danger-row .set-label{color:var(--red)}
 
-
+  /* 收款二维码 */
   .qr-box{display:flex; justify-content:center; padding:24px; border:1px solid var(--line); border-radius:16px; background:#fff; margin-bottom:18px}
   .qr-box canvas{display:block; width:200px; height:200px; image-rendering:pixelated}
   .recv-addr{font-size:13px; text-align:center; word-break:break-all; line-height:1.6; color:var(--ink); padding:0 8px}
 
-
+  /* 删除危险提示 */
   .danger-note{padding:13px 15px; border:1px solid #f0c9c9; background:#fef2f2; border-radius:10px;
     font-size:13px; color:#b91c1c; line-height:1.6; margin:6px 0 4px}
 
   .actions{display:flex; gap:10px; margin-bottom:30px}
   .actions .btn{flex:1 1 0; width:auto; min-width:0; padding-left:0; padding-right:0}
 
-
+  /* 铭文墙 */
   .sec-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px}
   .sec-head h2{margin:0}
   .ins-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:12px}
@@ -167,7 +169,7 @@
   .ins .meta .r{color:var(--faint); margin-top:2px}
   .empty{text-align:center; color:var(--faint); font-size:13px; padding:40px 0; border:1px dashed var(--line); border-radius:12px}
 
-
+  /* Tab 切换 (主页) */
   .tabs{display:flex; gap:0; border-bottom:1px solid var(--line); margin-bottom:18px}
   .tab{background:none; border:0; padding:12px 18px 11px; font-size:14px; color:var(--gray); cursor:pointer;
        border-bottom:2px solid transparent; margin-bottom:-1px; transition:.15s; font-family:inherit}
@@ -183,7 +185,7 @@
   .tab-panel::-webkit-scrollbar-thumb{background:#e0e0e0; border-radius:3px}
   .tab-panel::-webkit-scrollbar-thumb:hover{background:#bdbdbd}
 
-
+  /* 交易记录列表 */
   .tx-list{display:flex; flex-direction:column; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden}
   .tx-row{display:grid; grid-template-columns:32px 1fr auto; gap:12px; align-items:center;
           padding:14px 16px; background:#fff; cursor:pointer; transition:.12s}
@@ -203,13 +205,13 @@
   .tx-row .amt .c.unconfirmed{color:#9c6a1a}
   .tx-row .amt .c.dropped{color:#b42318}
 
-
+  /* pending(待确认收款) 提示条 */
   .bal-card .pending{font-size:12px; color:#9c6a1a; margin-top:6px}
 
-
+  /* 自动锁定行(下拉+按钮并列) */
   .set-ctrl{display:flex; gap:8px; align-items:center}
 
-
+  /* 弹窗 */
   .modal-bg{position:fixed; inset:0; background:rgba(23,23,23,.32); backdrop-filter:blur(2px);
     display:none; align-items:center; justify-content:center; z-index:50; padding:20px}
   .modal-bg.show{display:flex}
@@ -224,7 +226,7 @@
   .origin-bar{display:flex; align-items:center; gap:8px; padding:10px 12px; background:var(--soft);
     border-radius:9px; font-size:12px; color:var(--gray); margin-bottom:16px; font-family:var(--mono)}
 
-
+  /* 步骤指示 */
   .steps{display:flex; gap:6px; margin-bottom:22px}
   .steps i{flex:1; height:3px; border-radius:3px; background:var(--line)}
   .steps i.on{background:var(--ink)}
@@ -248,7 +250,9 @@
 </head>
 <body>
 <script>
-
+  /* 防刷新跳动: 同步预设居中类, 不等 JS 异步 boot.
+     刷新后初始态必为单卡视图(无钱包=welcome / 有钱包=已锁定unlock),
+     两者都垂直居中. 解锁进 home 由 boot() 移除 centered. */
   (function(){
     try{
       var has = !!localStorage.getItem('btcc_wallet_v1');
@@ -264,7 +268,7 @@
 </header>
 
 <main>
-
+  <!-- ========== 视图: 欢迎(无钱包) ========== -->
   <section class="card view" id="v-welcome">
     <div class="kicker">BTCC 链原生钱包</div>
     <h1>管理你的 BTCC 资产</h1>
@@ -274,12 +278,12 @@
     <div class="btn-row"><button class="btn ghost" onclick="W.go('import')">导入已有助记词</button></div>
   </section>
 
-
+  <!-- ========== 视图: 创建 ========== -->
   <section class="card view hide" id="v-create">
     <div class="back" onclick="W.go('welcome')">← 返回</div>
     <div class="steps"><i id="cs0"></i><i id="cs1"></i><i id="cs2"></i></div>
 
-
+    <!-- 步骤1: 展示助记词 -->
     <div id="c-step0">
       <h1>备份助记词</h1>
       <p class="lead">这 12 个词是你钱包的唯一备份。请按顺序抄在纸上，离线保存。任何人拿到它就能控制你的资产。</p>
@@ -288,7 +292,7 @@
       <button class="btn" onclick="W.toVerify()">我已抄写，下一步</button>
     </div>
 
-
+    <!-- 步骤2: 验证助记词 -->
     <div id="c-step1" class="hide">
       <h1>验证备份</h1>
       <p class="lead">请按提示选出对应位置的词，确认你已正确抄写。</p>
@@ -296,7 +300,7 @@
       <div class="err" id="verifyErr"></div>
     </div>
 
-
+    <!-- 步骤3: 设密码(新增钱包模式下隐藏, 复用已有会话密码) -->
     <div id="c-step2" class="hide">
       <h1>设置解锁密码</h1>
       <div id="cPwWrap">
@@ -312,7 +316,7 @@
     </div>
   </section>
 
-
+  <!-- ========== 视图: 导入 ========== -->
   <section class="card view hide" id="v-import">
     <div class="back" onclick="W.go('welcome')">← 返回</div>
     <h1>导入钱包</h1>
@@ -330,7 +334,7 @@
     <button class="btn" onclick="W.finishImport()" style="margin-top:20px">导入并加密保存</button>
   </section>
 
-
+  <!-- ========== 视图: 解锁 ========== -->
   <section class="card view hide" id="v-unlock">
     <div class="kicker">钱包已锁定</div>
     <h1>解锁钱包</h1>
@@ -341,9 +345,9 @@
     <button class="btn" onclick="W.doUnlock()" style="margin-top:20px">解锁</button>
   </section>
 
-
+  <!-- ========== 视图: 主页(已解锁) ========== -->
   <section class="card wide view hide" id="v-home">
-
+    <!-- 钱包切换条: 只在有"导入地址"时显示(HD 钱包已聚合为单一余额, 无需切换) -->
     <div class="wallet-bar hide" id="walletBar">
       <select id="walletSel" onchange="W.switchWallet(this.value)"></select>
     </div>
@@ -364,23 +368,23 @@
       <button class="btn ghost" id="refreshBtn" onclick="W.refresh(true)">刷新</button>
     </div>
 
-
+    <!-- Tab 切换: 交易记录 / 我的NFT -->
     <div class="tabs" role="tablist">
       <button class="tab active" id="tab-tx" onclick="W.switchTab('tx')" role="tab">交易记录</button>
       <button class="tab" id="tab-ins" onclick="W.switchTab('ins')" role="tab">我的NFT <span class="muted mono" id="insCount"></span></button>
     </div>
 
-
+    <!-- 交易记录面板 -->
     <div class="tab-panel" id="panel-tx">
       <div id="txWrap"><div class="empty">加载中…</div></div>
     </div>
 
-
+    <!-- 铭文面板 -->
     <div class="tab-panel hide" id="panel-ins">
       <div id="insWrap"><div class="empty">加载中…</div></div>
     </div>
 
-
+    <!-- 设置区 -->
     <div class="settings">
       <div class="set-row">
         <div class="set-label">新建钱包<span class="set-sub">生成一套全新助记词，作为一个独立钱包，和现有钱包资产分开</span></div>
@@ -418,12 +422,12 @@
     </div>
   </section>
 
-
+  <!-- ========== 视图: 导入私钥 / Descriptor ========== -->
   <section class="card view hide" id="v-importkey">
     <div class="back" onclick="W.go('home')">← 返回</div>
     <h1>导入节点钱包地址</h1>
     <p class="lead">把官方客户端 / 节点钱包里的地址导入到此钱包。导入后即可查看该地址的 NFT，并通过本钱包的防烧毁保护（避免误花掉承载铭文的 UTXO）安全转账。</p>
-    <div class="danger-note">本地加密保存，请妥善备份。</div>
+    <div class="danger-note">私钥只在你本机浏览器里加密保存，绝不上传服务器。请在自己可信的设备上操作。注意：descriptor 含整个钱包的总私钥，能推导出该钱包全部地址，敏感度高于单个私钥，务必确认是你本人的设备。</div>
 
     <div class="hint" style="background:#f7f8fa;border:1px solid #e6e8ec;border-radius:10px;padding:12px 14px;margin:4px 0 14px;line-height:1.7">
       <b>第一步 · 在节点拿到私钥</b><br>
@@ -449,7 +453,7 @@
     <button class="btn" id="impKeyBtn" style="margin-top:14px" onclick="W.finishImportKey()">确认导入</button>
   </section>
 
-
+  <!-- ========== 视图: 管理导入地址 ========== -->
   <section class="card view hide" id="v-manageimports">
     <div class="back" onclick="W.go('home')">← 返回</div>
     <h1>管理导入地址</h1>
@@ -458,7 +462,7 @@
     <button class="btn ghost" style="margin-top:18px" onclick="W.openImportKey()">+ 再导入一个</button>
   </section>
 
-
+  <!-- ========== 视图: 收款 ========== -->
   <section class="card view hide" id="v-receive">
     <div class="back" onclick="W.go('home')">← 返回</div>
     <h1>收款</h1>
@@ -468,7 +472,7 @@
     <button class="btn" onclick="W.copyAddr()" style="margin-top:18px">复制地址</button>
   </section>
 
-
+  <!-- ========== 视图: 删除钱包 ========== -->
   <section class="card view hide" id="v-delete">
     <div class="back" onclick="W.go('home')">← 返回</div>
     <h1>删除钱包</h1>
@@ -480,7 +484,7 @@
     <button class="btn danger" onclick="W.confirmDelete()" style="margin-top:18px">我已备份，确认删除</button>
   </section>
 
-
+  <!-- ========== 视图: 转账 ========== -->
   <section class="card view hide" id="v-send">
     <div class="back" onclick="W.go('home')">← 返回</div>
     <h1>转账</h1>
@@ -494,14 +498,14 @@
     <button class="btn" id="sendBtn" onclick="W.prepareSend()" style="margin-top:20px">下一步</button>
   </section>
 
-
+  <!-- ========== 视图: 铭文详情/转移 ========== -->
   <section class="card view hide" id="v-ins">
     <div class="back" onclick="W.go('home')">← 返回</div>
     <div id="insDetail"></div>
   </section>
 </main>
 
-
+<!-- ========== 签名确认弹窗 ========== -->
 <div class="modal-bg" id="signModal">
   <div class="modal">
     <h2 id="signTitle">确认操作</h2>
@@ -519,7 +523,7 @@
 
 <script src="/static/qrcode.min.js"></script>
 <script src="/static/wallet-bg.js?v=20260614d"></script>
-<script src="/static/wallet-core.js?v=20260620e"></script>
-<script src="/static/wallet-ui.js?v=20260621b"></script>
+<script src="/static/wallet-core.js?v=20260621c"></script>
+<script src="/static/wallet-ui.js?v=20260621c"></script>
 </body>
 </html>
