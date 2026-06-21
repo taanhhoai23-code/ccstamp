@@ -70,10 +70,15 @@ def decode_stamp_tx(tx: Dict) -> Optional[Dict]:
 
 
 def _valid_xfer(conn, seed: str, tx: Dict) -> bool:
-    row = conn.execute("SELECT owner_addr FROM seeds WHERE seed=? AND status='inscribed'", (seed,)).fetchone()
-    if not row or not row["owner_addr"]:
+    row = conn.execute("SELECT txid, carrier_vout FROM seeds WHERE seed=? AND status='inscribed'", (seed,)).fetchone()
+    if not row or not row["txid"]:
         return False
-    return row["owner_addr"] in _vin_addrs(tx)
+    want_txid = row["txid"]
+    want_vout = row["carrier_vout"] if row["carrier_vout"] is not None else 1
+    for vin in tx.get("vin") or []:
+        if vin.get("txid") == want_txid and int(vin.get("vout", -1)) == int(want_vout):
+            return True
+    return False
 
 
 def process_block(height: int):
@@ -95,7 +100,7 @@ def process_block(height: int):
                 conn.execute(
                     """
                     UPDATE seeds
-                       SET owner_addr=?, txid=?, height_at=?, status='inscribed'
+                       SET owner_addr=?, txid=?, height_at=?, carrier_vout=1, status='inscribed'
                      WHERE seed=? AND status!='inscribed'
                     """,
                     (item["owner_addr"], item["txid"], height, item["seed"]),
@@ -106,7 +111,7 @@ def process_block(height: int):
                 conn.execute(
                     """
                     UPDATE seeds
-                       SET owner_addr=?, txid=?, height_at=?
+                       SET owner_addr=?, txid=?, height_at=?, carrier_vout=1
                      WHERE seed=? AND status='inscribed'
                     """,
                     (item["owner_addr"], item["txid"], height, item["seed"]),

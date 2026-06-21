@@ -132,7 +132,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS seeds(
         idx INTEGER PRIMARY KEY, seed TEXT UNIQUE,
         status TEXT DEFAULT 'free', order_id TEXT, txid TEXT, owner_addr TEXT,
-        locked_at INTEGER, inscribed_at INTEGER);
+        locked_at INTEGER, inscribed_at INTEGER, height_at INTEGER, carrier_vout INTEGER DEFAULT 1);
     CREATE TABLE IF NOT EXISTS orders(
         order_id TEXT PRIMARY KEY, qty INTEGER, recv_addr TEXT, pay_addr TEXT UNIQUE,
         pay_to TEXT, auth_msg TEXT, auth_sig TEXT,
@@ -144,6 +144,11 @@ def init_db():
     CREATE TABLE IF NOT EXISTS app_meta(
         key TEXT PRIMARY KEY, value TEXT);
     ''')
+    seed_cols = {r['name'] for r in c.execute("PRAGMA table_info(seeds)").fetchall()}
+    if 'height_at' not in seed_cols:
+        c.execute("ALTER TABLE seeds ADD COLUMN height_at INTEGER")
+    if 'carrier_vout' not in seed_cols:
+        c.execute("ALTER TABLE seeds ADD COLUMN carrier_vout INTEGER DEFAULT 1")
     cols = {r['name'] for r in c.execute("PRAGMA table_info(orders)").fetchall()}
     if 'phase_idx' not in cols:
         c.execute("ALTER TABLE orders ADD COLUMN phase_idx INTEGER")
